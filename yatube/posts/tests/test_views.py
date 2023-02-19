@@ -63,7 +63,7 @@ class PostViewsTest(TestCase):
                 'posts:post_create'
             ): 'posts/create_post.html',
         }
-        for reverse_name, template,  in url_to_template.items():
+        for reverse_name, template, in url_to_template.items():
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
