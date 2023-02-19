@@ -75,7 +75,7 @@ class UrlTests(TestCase):
         response = self.guest_client.get(f'/posts/{self.post.id}/edit/')
         self.assertRedirects(response, (
             f'/auth/login/?next=/posts/{self.post.id}/edit/')
-            )
+        )
 
     def test_post_create_authorized(self):
         '''Проверка на создание поста авторизованным пользователем'''
@@ -86,4 +86,3 @@ class UrlTests(TestCase):
         '''Проверка на создание поста гостем'''
         response = self.guest_client.get(reverse('posts:post_create'))
         self.assertRedirects(response, ('/auth/login/?next=/create/'))
-        
