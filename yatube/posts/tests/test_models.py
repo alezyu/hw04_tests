@@ -2,7 +2,8 @@
 TODO:
 Спринт 5/16 → Тема 2/4: Тестирование Django → Урок 2/8
 Дополнительное задание
-Добавьте в поля модели Post атрибуты verbose_name и help_text; протестируйте их.
+Добавьте в поля модели Post атрибуты verbose_name
+и help_text; протестируйте их.
 '''
 
 from django.contrib.auth import get_user_model
@@ -19,15 +20,14 @@ class PostModelTest(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
         cls.group = Group.objects.create(
-            title = 'Test group, please ignore',
-            slug = 'test_slug',
-            description = 'Test description, please ignore',
+            title='Test group, please ignore',
+            slug='test_slug',
+            description='Test description, please ignore',
         )
         cls.post = Post.objects.create(
-            author = cls.user,
-            text = 'Test post, please ignore',
+            author=cls.user,
+            text='Test post, please ignore',
         )
-
 
     def test_models_have_correct_object_names(self):
         post = PostModelTest.post

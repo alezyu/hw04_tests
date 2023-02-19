@@ -16,15 +16,15 @@ class UrlTests(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth_user')
         cls.post = Post.objects.create(
-            text = 'Test text, please ignore',
-            author = cls.user,
+            text='Test text, please ignore',
+            author=cls.user,
         )
         cls.group = Group.objects.create(
-            title = 'Test title, please ignore',
-            slug = 'test_slug',
-            description = 'Test description, please ignore',
+            title='Test title, please ignore',
+            slug='test_slug',
+            description='Test description, please ignore',
         )
-    
+
     def setUp(self) -> None:
         self.guest_client = Client()
         self.authorized_client = Client()
@@ -36,7 +36,7 @@ class UrlTests(TestCase):
         url_codes = {
             '/': HTTPStatus.OK,
             f'/group/{self.group.slug}/': HTTPStatus.OK,
-            f'/profile/{self.user}/': HTTPStatus.OK, 
+            f'/profile/{self.user}/': HTTPStatus.OK,
             f'/posts/{self.post.id}/': HTTPStatus.OK,
             '/unexisting_page/': HTTPStatus.NOT_FOUND,
         }
@@ -73,7 +73,9 @@ class UrlTests(TestCase):
     def test_post_edit_non_author(self):
         '''Проверка на редактирование не автором'''
         response = self.guest_client.get(f'/posts/{self.post.id}/edit/')
-        self.assertRedirects(response, (f'/auth/login/?next=/posts/{self.post.id}/edit/'))
+        self.assertRedirects(response, (
+            f'/auth/login/?next=/posts/{self.post.id}/edit/')
+            )
 
     def test_post_create_authorized(self):
         '''Проверка на создание поста авторизованным пользователем'''
@@ -83,4 +85,5 @@ class UrlTests(TestCase):
     def test_post_create_non_authorized(self):
         '''Проверка на создание поста гостем'''
         response = self.guest_client.get(reverse('posts:post_create'))
-        self.assertRedirects(response, (f'/auth/login/?next=/create/'))
+        self.assertRedirects(response, ('/auth/login/?next=/create/'))
+        
