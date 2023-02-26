@@ -57,7 +57,8 @@ class PostCreateFormTest(TestCase):
         self.assertTrue(Post.objects.filter(
             author=self.user,
             text=form_data['text']).exists(),
-            f'Ошибка при создании формы: author={self.user}, text={form_data["text"]}'
+            f'Ошибка при создании формы: author={self.user},'
+            'text={form_data["text"]}'
         )
 
     def test_edit_post_form(self):
