@@ -20,6 +20,11 @@ class PostCreateFormTest(TestCase):
             slug='Test_slug',
             description='Test description, please ignore',
         )
+        cls.group2 = Group.objects.create(
+            title='Test group2, please ignore',
+            slug='Test_slug2',
+            description='Test description2, please ignore',
+        )
         cls.post = Post.objects.create(
             text='Test post, please ignore',
             author=cls.user,
@@ -34,7 +39,7 @@ class PostCreateFormTest(TestCase):
         '''Проверка формы, редирект, создание поста, автора'''
         post_count = Post.objects.count()
         form_data = {
-            'text': 'text',
+            'text': 'Lorem Ipsum',
             'group': self.group.id
         }
         response = self.authorized_client.post(
@@ -51,8 +56,8 @@ class PostCreateFormTest(TestCase):
         self.assertEqual(Post.objects.count(), post_count + 1)
         self.assertTrue(Post.objects.filter(
             author=self.user,
-            text=form_data['text'],
-            id=2).exists()
+            text=form_data['text']).exists(),
+            f'Ошибка при создании формы: author={self.user}, text={form_data["text"]}'
         )
 
     def test_edit_post_form(self):
@@ -60,7 +65,7 @@ class PostCreateFormTest(TestCase):
         post_count = Post.objects.count()
         form_data = {
             'text': 'Test edited_post, please ignore',
-            'group': self.group.id,
+            'group': self.group2.id,
         }
 
         response = self.authorized_client.post(
@@ -75,4 +80,8 @@ class PostCreateFormTest(TestCase):
         # Текст поста изменился
         self.assertTrue(Post.objects.filter(
             text=form_data['text']).exists()
+        )
+        # Группа изменилась
+        self.assertTrue(Post.objects.filter(
+            group=form_data['group']).exists()
         )

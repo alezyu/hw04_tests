@@ -24,65 +24,82 @@ class UrlTests(TestCase):
             slug='test_slug',
             description='Test description, please ignore',
         )
+        # (url: template, guest_response, auth_response)
+        cls.PUBLIC_URLS = {
+            reverse('posts:index'): (
+                'posts/index.html',
+                HTTPStatus.OK,
+                HTTPStatus.OK
+            ),
+            reverse('posts:group_list', kwargs={'slug': cls.group.slug}): (
+                'posts/group_list.html',
+                HTTPStatus.OK,
+                HTTPStatus.OK
+            ),
+            reverse('posts:profile', kwargs={'username': cls.user}): (
+                'posts/profile.html',
+                HTTPStatus.OK,
+                HTTPStatus.OK
+            ),
+            reverse('posts:post_detail', kwargs={'post_id': cls.post.id}): (
+                'posts/post_detail.html',
+                HTTPStatus.OK,
+                HTTPStatus.OK
+            ),
+        }
+        cls.PRIVATE_URLS = {
+            reverse('posts:post_create'): (
+                'posts/create_post.html',
+                '/auth/login/?next=/create/',
+                HTTPStatus.OK
+            ),
+            reverse('posts:post_edit', kwargs={'post_id': cls.post.id}): (
+                'posts/create_post.html',
+                f'/auth/login/?next=/posts/{cls.post.id}/edit/',
+                HTTPStatus.OK
+            ),
+        }
 
     def setUp(self) -> None:
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def test_urls(self):
-        '''Проверка на доступ гостем'''
-        # TODO: сделать везде через reverse и args
-        url_codes = {
-            '/': HTTPStatus.OK,
-            f'/group/{self.group.slug}/': HTTPStatus.OK,
-            f'/profile/{self.user}/': HTTPStatus.OK,
-            f'/posts/{self.post.id}/': HTTPStatus.OK,
-            '/unexisting_page/': HTTPStatus.NOT_FOUND,
-        }
-        for url, code in url_codes.items():
+    def test_public_pages(self):
+        for url, test in self.PUBLIC_URLS.items():
             with self.subTest(url=url):
                 response = self.guest_client.get(url)
-                self.assertEqual(response.status_code, code)
+                response_auth = self.authorized_client.get(url)
+                self.assertTemplateUsed(
+                    response_auth,
+                    test[0],
+                    'Неверный template страницы'
+                )
+                self.assertEqual(
+                    response.status_code,
+                    test[1],
+                    'Неверный HTTPStatus на запрос гостя'
+                )
+                self.assertEqual(
+                    response_auth.status_code,
+                    test[2],
+                    'Неверный HTTPStatus на запрос пользователя'
+                )
 
-    def test_url_to_template(self):
-        '''Проверка соответствия url и template'''
-        url_template = {
-            reverse('posts:index'): 'posts/index.html',
-            reverse('posts:group_list', kwargs={'slug': self.group.slug}):
-            'posts/group_list.html',
-            reverse('posts:profile', kwargs={'username': self.user}):
-            'posts/profile.html',
-            reverse('posts:post_detail', kwargs={'post_id': self.post.id}):
-            'posts/post_detail.html',
-            reverse('posts:post_create'): 'posts/create_post.html',
-            # reverse('posts:post_edit', kwargs={'post_id': self.post.id}):
-            # 'posts/create_post.html',
-            # f'/posts/{self.post.id}/edit/': 'posts/create_post.html',
-        }
-        for url, template in url_template.items():
+    def test_private_pages(self):
+        for url, test in self.PRIVATE_URLS.items():
             with self.subTest(url=url):
-                response = self.authorized_client.get(url)
-                self.assertTemplateUsed(response, template)
+                response = self.guest_client.get(url)
+                response_auth = self.authorized_client.get(url)
+                self.assertTemplateUsed(
+                    response_auth,
+                    test[0],
+                )
+                # проверка на создание, редактирование гостем
+                self.assertRedirects(response, test[1])
 
-    def test_post_edit(self):
-        '''Проверка на редактирование автором'''
-        response = self.authorized_client.get(f'/posts/{self.post.id}/edit/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_post_edit_non_author(self):
-        '''Проверка на редактирование не автором'''
-        response = self.guest_client.get(f'/posts/{self.post.id}/edit/')
-        self.assertRedirects(response, (
-            f'/auth/login/?next=/posts/{self.post.id}/edit/')
-        )
-
-    def test_post_create_authorized(self):
-        '''Проверка на создание поста авторизованным пользователем'''
-        response = self.authorized_client.get(reverse('posts:post_create'))
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_post_create_non_authorized(self):
-        '''Проверка на создание поста гостем'''
-        response = self.guest_client.get(reverse('posts:post_create'))
-        self.assertRedirects(response, ('/auth/login/?next=/create/'))
+    def test_unexisting_page(self):
+        response = self.guest_client.get('/unexisting_page/')
+        response_auth = self.authorized_client.get('/unexisting_page/')
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(response_auth.status_code, HTTPStatus.NOT_FOUND)

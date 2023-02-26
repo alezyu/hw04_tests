@@ -6,6 +6,7 @@ TODO:
 и help_text; протестируйте их.
 '''
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -31,8 +32,8 @@ class PostModelTest(TestCase):
 
     def test_models_have_correct_object_names(self):
         post = PostModelTest.post
-        self.assertEqual(post.__str__(), self.post.text[:15])
+        self.assertEqual(str(post), self.post.text[:settings.POST_TEXT_SHORT])
 
     def test_group_model_have_correct_object_names(self):
         group = PostModelTest.group
-        self.assertEqual(group.__str__(), 'Test group, please ignore')
+        self.assertEqual(str(group), 'Test group, please ignore')

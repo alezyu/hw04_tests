@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -46,4 +47,4 @@ class Post(models.Model):
         ordering = ('-pub_date',)
 
     def __str__(self) -> str:
-        return self.text[:15]
+        return self.text[:settings.POST_TEXT_SHORT]
