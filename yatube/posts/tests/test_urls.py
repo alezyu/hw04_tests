@@ -46,6 +46,11 @@ class UrlTests(TestCase):
                 HTTPStatus.OK,
                 HTTPStatus.OK
             ),
+            '/unexisting_page/': (
+                'core/404.html',
+                HTTPStatus.NOT_FOUND,
+                HTTPStatus.NOT_FOUND
+            ),
         }
         cls.PRIVATE_URLS = {
             reverse('posts:post_create'): (
