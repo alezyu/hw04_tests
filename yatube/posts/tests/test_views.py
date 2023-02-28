@@ -47,20 +47,38 @@ class PostViewsTest(TestCase):
         '''
         # url: (template, test)
         url_tests = {
-            reverse('posts:index'): ('posts/index.html', 'page_obj'),
+            reverse('posts:index'): (
+                'posts/index.html',
+                'page_obj'
+            ),
             reverse(
                 'posts:group_list', kwargs={'slug': self.group.slug}
-            ): ('posts/group_list.html', 'page_obj'),
+            ): (
+                'posts/group_list.html',
+                'page_obj',
+            ),
             reverse(
                 'posts:profile', kwargs={'username': self.user}
-            ): ('posts/profile.html', 'page_obj'),
+            ): (
+                'posts/profile.html',
+                'page_obj',
+            ),
             reverse(
                 'posts:post_detail', kwargs={'post_id': self.post.id}
-            ): ('posts/post_detail.html', 'post'),
+            ): (
+                'posts/post_detail.html',
+                'post',
+            ),
             reverse(
                 'posts:post_edit', kwargs={'post_id': self.post.id}
-            ): ('posts/create_post.html', 'form'),
-            reverse('posts:post_create'): ('posts/create_post.html', 'form'),
+            ): (
+                'posts/create_post.html',
+                'form',
+            ),
+            reverse('posts:post_create'): (
+                'posts/create_post.html',
+                'form',
+            ),
         }
         for (
             url,
@@ -82,13 +100,12 @@ class PostViewsTest(TestCase):
                     'group': forms.fields.ChoiceField,
                 }
                 for value, expected in form_fields.items():
-                    with self.subTest(value=value):
-                        form_field = response.context['form'].fields[value]
-                        self.assertIsInstance(
-                            form_field,
-                            expected,
-                            f'Неверный контекст формы на странице {url}'
-                        )
+                    form_field = response.context['form'].fields[value]
+                    self.assertIsInstance(
+                        form_field,
+                        expected,
+                        f'Неверный контекст формы на странице {url}'
+                    )
                 continue
             post_text = first_object.text
             post_author = first_object.author
