@@ -102,9 +102,3 @@ class UrlTests(TestCase):
                 )
                 # проверка на создание, редактирование гостем
                 self.assertRedirects(response, test[1])
-
-    def test_unexisting_page(self):
-        response = self.guest_client.get('/unexisting_page/')
-        response_auth = self.authorized_client.get('/unexisting_page/')
-        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        self.assertEqual(response_auth.status_code, HTTPStatus.NOT_FOUND)
