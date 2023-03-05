@@ -1,18 +1,30 @@
-# TODO переделать где можно через subTest
-# TODO подобрать правильные assert'ы
+import shutil
+import tempfile
+
 from django import forms
 
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from posts.models import Group, Post
 
+IMAGE = (
+    b"\x47\x49\x46\x38\x39\x61\x02\x00"
+    b"\x01\x00\x80\x00\x00\x00\x00\x00"
+    b"\xFF\xFF\xFF\x21\xF9\x04\x00\x00"
+    b"\x00\x00\x00\x2C\x00\x00\x00\x00"
+    b"\x02\x00\x01\x00\x00\x02\x02\x0C"
+    b"\x0A\x00\x3B"
+)
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 User = get_user_model()
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostViewsTest(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -33,7 +45,15 @@ class PostViewsTest(TestCase):
             text='Test text, please ignore',
             author=cls.user,
             group=cls.group,
+            image=SimpleUploadedFile(
+                name="small.gif", content=IMAGE, content_type="image/gif"
+            ),
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self) -> None:
         self.guest_client = Client()
@@ -98,6 +118,7 @@ class PostViewsTest(TestCase):
                 form_fields = {
                     'text': forms.fields.CharField,
                     'group': forms.fields.ChoiceField,
+                    'image': forms.fields.ImageField,
                 }
                 for value, expected in form_fields.items():
                     form_field = response.context['form'].fields[value]
@@ -110,10 +131,12 @@ class PostViewsTest(TestCase):
             post_text = first_object.text
             post_author = first_object.author
             post_group = first_object.group
+            post_image = first_object.image
             posts_dict = {
                 post_text: self.post.text,
                 post_author: self.user,
                 post_group: self.group,
+                post_image: self.post.image,
             }
             # Проверка контекста страниц
             for post_param, test_post_param in posts_dict.items():
