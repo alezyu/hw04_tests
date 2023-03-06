@@ -2,6 +2,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from core.models import CreatedModel
+
 
 User = get_user_model()
 
@@ -22,14 +24,10 @@ class Group(models.Model):
         return self.title
 
 
-class Post(models.Model):
+class Post(CreatedModel):
     text = models.TextField(
         verbose_name='Текст поста',
         help_text='Введите текст поста',
-    )
-    pub_date = models.DateTimeField(
-        verbose_name='Дата публикации',
-        auto_now_add=True,
     )
     author = models.ForeignKey(
         User,
@@ -55,13 +53,13 @@ class Post(models.Model):
     class Meta:
         verbose_name = 'Пост'
         verbose_name_plural = 'Посты'
-        ordering = ('-pub_date',)
+        ordering = ('-created',)
 
     def __str__(self) -> str:
         return self.text[:settings.POST_TEXT_SHORT]
 
 
-class Comment(models.Model):
+class Comment(CreatedModel):
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
@@ -79,10 +77,6 @@ class Comment(models.Model):
         help_text='Введите комментарий к посту. (Максимум 200 символов)',
         max_length=200,
         null=False,
-    )
-    created = models.DateTimeField(
-        verbose_name='Дата публикации',
-        auto_now_add=True,
     )
 
     class Meta:
