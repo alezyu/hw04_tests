@@ -1,11 +1,10 @@
 import shutil
 import tempfile
-
 from http import HTTPStatus
 
 from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
@@ -44,6 +43,7 @@ class PostCreateFormTest(TestCase):
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
+        cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
@@ -78,17 +78,17 @@ class PostCreateFormTest(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertRedirects(response, reverse(
             'posts:profile',
-            kwargs={'username': self.user})
+            kwargs={'username': self.user}),
         )
         self.assertEqual(Post.objects.count(), post_count + 1)
         self.assertTrue(Post.objects.filter(
             author=self.user,
             text=form_data['text'],
-            image='posts/small.gif'
+            image='posts/small.gif',
         ).exists(),
             f'Ошибка при создании формы: author={self.user}, '
             f'text={form_data["text"]} '
-            f'image={form_data["image"]}'
+            f'image={form_data["image"]}',
         )
 
     def test_edit_post_form(self):
@@ -110,11 +110,11 @@ class PostCreateFormTest(TestCase):
         self.assertEqual(Post.objects.count(), post_count)
         # Текст поста изменился
         self.assertTrue(Post.objects.filter(
-            text=form_data['text']).exists()
+            text=form_data['text']).exists(),
         )
         # Группа изменилась
         self.assertTrue(Post.objects.filter(
-            group=form_data['group']).exists()
+            group=form_data['group']).exists(),
         )
 
     def test_auth_create_comment(self):
@@ -132,22 +132,22 @@ class PostCreateFormTest(TestCase):
         self.assertEqual(new_comments_count,
                          1,
                          'Авторизованный пользователь не может'
-                         ' добавлять комментарии'
+                         ' добавлять комментарии',
                          )
         self.assertTrue(Comment.objects.filter(
-            text=form_data['text']
+            text=form_data['text'],
         ).exists(),
-            'Не добавился текст комментария из формы'
+            'Не добавился текст комментария из формы',
         )
         self.assertTrue(Comment.objects.filter(
-            post=self.post
+            post=self.post,
         ).exists(),
-            'Не добавился комментарий к нужному посту'
+            'Не добавился комментарий к нужному посту',
         )
         self.assertTrue(Comment.objects.filter(
-            author=self.user
+            author=self.user,
         ).exists(),
-            'Комментарий добавляется не от того пользователя'
+            'Комментарий добавляется не от того пользователя',
         )
 
     def test_guest_create_comment(self):
@@ -164,5 +164,5 @@ class PostCreateFormTest(TestCase):
         self.assertEqual(
             Comment.objects.count(),
             comments_count,
-            'Гость не должен добавлять комментарий'
+            'Гость не должен добавлять комментарий',
         )

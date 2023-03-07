@@ -4,6 +4,7 @@ import tempfile
 from django import forms
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
@@ -26,6 +27,7 @@ User = get_user_model()
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostViewsTest(TestCase):
+
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -46,7 +48,7 @@ class PostViewsTest(TestCase):
             author=cls.user,
             group=cls.group,
             image=SimpleUploadedFile(
-                name="small.gif", content=IMAGE, content_type="image/gif"
+                name="small.gif", content=IMAGE, content_type="image/gif",
             ),
         )
 
@@ -56,6 +58,7 @@ class PostViewsTest(TestCase):
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self) -> None:
+        cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
@@ -69,28 +72,28 @@ class PostViewsTest(TestCase):
         url_tests = {
             reverse('posts:index'): (
                 'posts/index.html',
-                'page_obj'
+                'page_obj',
             ),
             reverse(
-                'posts:group_list', kwargs={'slug': self.group.slug}
+                'posts:group_list', kwargs={'slug': self.group.slug},
             ): (
                 'posts/group_list.html',
                 'page_obj',
             ),
             reverse(
-                'posts:profile', kwargs={'username': self.user}
+                'posts:profile', kwargs={'username': self.user},
             ): (
                 'posts/profile.html',
                 'page_obj',
             ),
             reverse(
-                'posts:post_detail', kwargs={'post_id': self.post.id}
+                'posts:post_detail', kwargs={'post_id': self.post.id},
             ): (
                 'posts/post_detail.html',
                 'post',
             ),
             reverse(
-                'posts:post_edit', kwargs={'post_id': self.post.id}
+                'posts:post_edit', kwargs={'post_id': self.post.id},
             ): (
                 'posts/create_post.html',
                 'form',
@@ -125,7 +128,7 @@ class PostViewsTest(TestCase):
                     self.assertIsInstance(
                         form_field,
                         expected,
-                        f'Неверный контекст формы на странице {url}'
+                        f'Неверный контекст формы на странице {url}',
                     )
                 continue
             post_text = first_object.text
@@ -153,7 +156,7 @@ class PostViewsTest(TestCase):
         urls = {
             reverse(
                 'posts:group_list',
-                kwargs={'slug': self.group.slug}
+                kwargs={'slug': self.group.slug},
             ):
                 (
                     1,
@@ -161,7 +164,7 @@ class PostViewsTest(TestCase):
             ),
             reverse(
                 'posts:profile',
-                kwargs={'username': self.user.username}
+                kwargs={'username': self.user.username},
             ):
                 (
                     1,
@@ -169,7 +172,7 @@ class PostViewsTest(TestCase):
             ),
             reverse(
                 'posts:group_list',
-                kwargs={'slug': self.group2.slug}
+                kwargs={'slug': self.group2.slug},
             ):
                 (
                     0,
@@ -177,7 +180,7 @@ class PostViewsTest(TestCase):
             ),
             reverse(
                 'posts:profile',
-                kwargs={'username': self.user2.username}
+                kwargs={'username': self.user2.username},
             ):
                 (
                     0,
@@ -190,8 +193,32 @@ class PostViewsTest(TestCase):
                 page_obj = response.context.get('page_obj')
                 self.assertEqual(len(page_obj), test[0])
                 self.assertEqual(
-                    list(response.context.get('page_obj')), test[1]
+                    list(response.context.get('page_obj')), test[1],
                 )
+
+    def test_cache_index_page(self):
+        '''Проверка кэширования главной страницы.'''
+        response = self.authorized_client.get(reverse('posts:index'))
+        content_1 = response.content
+        post_count1 = Post.objects.count()
+        # Добавляем новый пост (должен попасть в кеш)
+        Post.objects.create(
+            text='Test cached text, please ignore',
+            author=self.user,
+            group=self.group,
+        )
+        response_2 = self.authorized_client.get(reverse('posts:index'))
+        content_2 = response_2.content
+        self.assertEqual(content_1, content_2, 'Кеш не работает')
+        cache.clear()
+        post_count3 = Post.objects.count()
+        response_3 = self.authorized_client.get(reverse('posts:index'))
+        content_3 = response_3.content
+        self.assertNotEqual(content_1, content_3, 'Кеш не очистился')
+        self.assertNotEqual(
+            post_count1, post_count3,
+            'Количество постов не изменилось',
+        )
 
 
 class PaginatorViewTests(TestCase):
@@ -220,18 +247,19 @@ class PaginatorViewTests(TestCase):
             reverse('posts:index'): settings.POSTS_PER_PAGE,
             reverse('posts:index') + '?page=2': cls.POSTS_ON_SECOND_PAGE,
             reverse(
-                'posts:group_list', kwargs={'slug': cls.group.slug}
+                'posts:group_list', kwargs={'slug': cls.group.slug},
             ): settings.POSTS_PER_PAGE,
             reverse('posts:group_list', kwargs={'slug': cls.group.slug})
             + '?page=2': cls.POSTS_ON_SECOND_PAGE,
             reverse(
-                'posts:profile', kwargs={'username': cls.user}
+                'posts:profile', kwargs={'username': cls.user},
             ): settings.POSTS_PER_PAGE,
             reverse('posts:profile', kwargs={'username': cls.user})
             + '?page=2': cls.POSTS_ON_SECOND_PAGE,
         }
 
     def setUp(self) -> None:
+        cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)

@@ -1,18 +1,19 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import cache_page
 
 from .forms import CommentForm, PostForm
 from .models import Group, Post, User
-
 from .utils import create_pages
 
 
+@cache_page(20, key_prefix='index_page')
 def index(request):
     post_list = Post.objects.all()
     return render(
         request,
         'posts/index.html',
-        {'page_obj': create_pages(request, post_list)}
+        {'page_obj': create_pages(request, post_list)},
     )
 
 
@@ -22,7 +23,7 @@ def group_posts(request, slug):
     return render(
         request,
         'posts/group_list.html',
-        {'group': group, 'page_obj': create_pages(request, posts)}
+        {'group': group, 'page_obj': create_pages(request, posts)},
     )
 
 
@@ -35,7 +36,7 @@ def profile(request, username):
         {
             'author': author,
             'page_obj': create_pages(request, author_posts),
-        }
+        },
     )
 
 
@@ -84,7 +85,7 @@ def post_edit(request, post_id):
             'form': form,
             'post': post,
             'is_edit': True,
-        }
+        },
     )
 
 

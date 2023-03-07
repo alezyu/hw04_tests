@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -29,43 +30,44 @@ class UrlTests(TestCase):
             reverse('posts:index'): (
                 'posts/index.html',
                 HTTPStatus.OK,
-                HTTPStatus.OK
+                HTTPStatus.OK,
             ),
             reverse('posts:group_list', kwargs={'slug': cls.group.slug}): (
                 'posts/group_list.html',
                 HTTPStatus.OK,
-                HTTPStatus.OK
+                HTTPStatus.OK,
             ),
             reverse('posts:profile', kwargs={'username': cls.user}): (
                 'posts/profile.html',
                 HTTPStatus.OK,
-                HTTPStatus.OK
+                HTTPStatus.OK,
             ),
             reverse('posts:post_detail', kwargs={'post_id': cls.post.id}): (
                 'posts/post_detail.html',
                 HTTPStatus.OK,
-                HTTPStatus.OK
+                HTTPStatus.OK,
             ),
             '/unexisting_page/': (
                 'core/404.html',
                 HTTPStatus.NOT_FOUND,
-                HTTPStatus.NOT_FOUND
+                HTTPStatus.NOT_FOUND,
             ),
         }
         cls.PRIVATE_URLS = {
             reverse('posts:post_create'): (
                 'posts/create_post.html',
                 '/auth/login/?next=/create/',
-                HTTPStatus.OK
+                HTTPStatus.OK,
             ),
             reverse('posts:post_edit', kwargs={'post_id': cls.post.id}): (
                 'posts/create_post.html',
                 f'/auth/login/?next=/posts/{cls.post.id}/edit/',
-                HTTPStatus.OK
+                HTTPStatus.OK,
             ),
         }
 
     def setUp(self) -> None:
+        cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
@@ -78,17 +80,17 @@ class UrlTests(TestCase):
                 self.assertTemplateUsed(
                     response_auth,
                     test[0],
-                    'Неверный template страницы'
+                    'Неверный template страницы',
                 )
                 self.assertEqual(
                     response.status_code,
                     test[1],
-                    'Неверный HTTPStatus на запрос гостя'
+                    'Неверный HTTPStatus на запрос гостя',
                 )
                 self.assertEqual(
                     response_auth.status_code,
                     test[2],
-                    'Неверный HTTPStatus на запрос пользователя'
+                    'Неверный HTTPStatus на запрос пользователя',
                 )
 
     def test_private_pages(self):
