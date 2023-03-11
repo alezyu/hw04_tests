@@ -1,9 +1,11 @@
+from django.conf import settings
+from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import cache_page
 
 from .forms import CommentForm, PostForm
-from .models import Group, Post, User
+from .models import Follow, Group, Post, User
 from .utils import create_pages
 
 
@@ -30,12 +32,16 @@ def group_posts(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     author_posts = author.posts.select_related('author')
+    following = request.user.is_authenticated and author.following.filter(
+        user=request.user,
+    ).exists()
     return render(
         request,
         'posts/profile.html',
         {
             'author': author,
             'page_obj': create_pages(request, author_posts),
+            'following': following,
         },
     )
 
@@ -99,3 +105,37 @@ def add_comment(request, post_id):
         comment.post = post
         comment.save()
     return redirect('posts:post_detail', post_id=post_id)
+
+# Paginator для подписок
+def paginator_page(
+        queryset,
+        request,
+        posts_on_page=settings.POSTS_PER_PAGE,
+):
+    return Paginator(queryset, posts_on_page).get_page(
+        request.GET.get('page'))
+
+@login_required
+def follow_index(request):
+    post = Post.objects.filter(author__following__user=request.user)
+    context = {'page_obj': paginator_page(post, request)}
+    return render(request, 'posts/follow.html', context)
+
+
+@login_required
+def profile_follow(request, username):
+    author = get_object_or_404(User, username=username)
+    # Не разрешаем подписываться на самого себя
+    if request.user != author:
+        Follow.objects.get_or_create(user=request.user, author=author)
+    return redirect('posts:profile', username=username)
+
+
+@login_required
+def profile_unfollow(request, username):
+    author = get_object_or_404(User, username=username)
+    follow_filter = Follow.objects.filter(user=request.user, author=author)
+    # Проверка на существование подписки
+    if follow_filter.exists():
+        follow_filter.delete()
+    return redirect('posts:profile', username=username)
