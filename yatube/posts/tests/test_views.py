@@ -200,29 +200,29 @@ class PostViewsTest(TestCase):
                     list(response.context.get('page_obj')), test[1],
                 )
 
-    # def test_cache_index_page(self):
-    #     '''Проверка кэширования главной страницы.'''
-    #     response = self.authorized_client.get(reverse('posts:index'))
-    #     content_1 = response.content
-    #     post_count1 = Post.objects.count()
-    #     # Добавляем новый пост (должен попасть в кеш)
-    #     Post.objects.create(
-    #         text='Test cached text, please ignore',
-    #         author=self.user,
-    #         group=self.group,
-    #     )
-    #     response_2 = self.authorized_client.get(reverse('posts:index'))
-    #     content_2 = response_2.content
-    #     self.assertEqual(content_1, content_2, 'Кеш не работает')
-    #     cache.clear()
-    #     post_count3 = Post.objects.count()
-    #     response_3 = self.authorized_client.get(reverse('posts:index'))
-    #     content_3 = response_3.content
-    #     self.assertNotEqual(content_1, content_3, 'Кеш не очистился')
-    #     self.assertNotEqual(
-    #         post_count1, post_count3,
-    #         'Количество постов не изменилось',
-    #     )
+    def test_cache_index_page(self):
+        '''Проверка кэширования главной страницы.'''
+        response = self.authorized_client.get(reverse('posts:index'))
+        content_1 = response.content
+        post_count1 = Post.objects.count()
+        # Добавляем новый пост (должен попасть в кеш)
+        Post.objects.create(
+            text='Test cached text, please ignore',
+            author=self.user,
+            group=self.group,
+        )
+        response_2 = self.authorized_client.get(reverse('posts:index'))
+        content_2 = response_2.content
+        self.assertEqual(content_1, content_2, 'Кеш не работает')
+        cache.clear()
+        post_count3 = Post.objects.count()
+        response_3 = self.authorized_client.get(reverse('posts:index'))
+        content_3 = response_3.content
+        self.assertNotEqual(content_1, content_3, 'Кеш не очистился')
+        self.assertNotEqual(
+            post_count1, post_count3,
+            'Количество постов не изменилось',
+        )
 
 
 class PaginatorViewTests(TestCase):
