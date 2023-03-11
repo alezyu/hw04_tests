@@ -78,9 +78,9 @@ class UrlTests(TestCase):
                 response = self.guest_client.get(url)
                 response_auth = self.authorized_client.get(url)
                 self.assertTemplateUsed(
-                    response_auth,
+                    response,
                     test[0],
-                    'Неверный template страницы',
+                    f'Неверный template страницы: {url}, ожидается: {test[0]}',
                 )
                 self.assertEqual(
                     response.status_code,
